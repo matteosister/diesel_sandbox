@@ -1,9 +1,8 @@
 extern crate diesel;
 extern crate diesel_sandbox;
 
-
-use diesel_sandbox::*;
 use diesel_sandbox::repo;
+use diesel_sandbox::*;
 
 fn main() {
     let connection = establish_connection();

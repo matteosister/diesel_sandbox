@@ -1,9 +1,8 @@
 extern crate diesel;
 extern crate diesel_sandbox;
 
-
-use fake::Fake;
 use fake::faker::lorem::en::*;
+use fake::Fake;
 
 use self::diesel_sandbox::*;
 

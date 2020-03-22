@@ -1,12 +1,11 @@
-use std::any::TypeId;
-
-use diesel::expression::NonAggregate;
 use diesel::PgConnection;
 use diesel::prelude::*;
-use diesel::query_builder::{AstPass, QueryFragment, QueryId};
-use diesel::sql_types::Text;
+use diesel::sql_types::Bool;
 
 use crate::models::Post;
+use crate::schema::posts;
+
+type DB = diesel::pg::Pg;
 
 #[derive(QueryId)]
 pub enum TextSearch {
@@ -15,34 +14,21 @@ pub enum TextSearch {
 }
 
 
-impl QueryFragment<diesel::pg::Pg> for TextSearch {
-    fn walk_ast(&self, mut out: AstPass<diesel::pg::Pg>) -> QueryResult<()> {
-        match self {
-            TextSearch::Is(str) => out.push_bind_param::<Text, _>(&format!("{}", str))?,
-            TextSearch::Contains(str) => out.push_bind_param::<Text, _>(&format!("%{}%", str))?,
-        }
-
-        Ok(())
-    }
-}
-
-impl AppearsOnTable<crate::schema::posts::table> for TextSearch {}
-
-impl Expression for TextSearch { type SqlType = Text; }
-
-impl NonAggregate for TextSearch {}
-
-
 pub fn find_post(conn: &PgConnection) -> Vec<Post> {
-    use crate::schema::posts::dsl::*;
-
     let contains_lorem = TextSearch::Contains("lorem".to_owned());
     let is_title = TextSearch::Is("et sequi amet officia.".to_owned());
 
-    posts
-        .filter(body.like(contains_lorem))
-        .filter(title.eq(is_title))
+    posts::table
+        .filter(search_title(contains_lorem))
+        //.filter(search_title(is_title))
         .limit(5)
         .load::<Post>(conn)
         .unwrap()
+}
+
+fn search_title(search: TextSearch) -> Box<dyn BoxableExpression<posts::table, DB, SqlType=Bool>> {
+    match search {
+        TextSearch::Is(str) => Box::new(posts::title.eq(str)),
+        TextSearch::Contains(str) => Box::new(posts::title.like(format!("%{}%", str))),
+    }
 }

@@ -11,8 +11,8 @@ use dotenv::dotenv;
 use self::models::{NewPost, Post};
 
 pub mod models;
-pub mod schema;
 pub mod repo;
+pub mod schema;
 
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
@@ -31,4 +31,3 @@ pub fn create_post<'a>(conn: &PgConnection, title: &'a str, body: &'a str) -> Po
         .get_result(conn)
         .expect("Error saving new post")
 }
-
